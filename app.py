@@ -65,11 +65,12 @@ col4.metric("Skills Found", filtered_df["skills"].nunique())
 
 st.divider()
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📊 Overview",
     "🧠 Skills",
     "🔎 Job Explorer",
-    "🎯 Recommendation"
+    "🎯 Recommendation",
+    "📈 Domain Analytics"
 ])
 
 with tab1:
@@ -189,6 +190,103 @@ with tab4:
                 st.write(f"✅ {skill.title()}")
         else:
             st.success("Great! Your skills match current job demand.")
+            
+with tab5:
+
+    st.subheader("📈 Domain Analytics")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown("### 🧩 Domain Distribution")
+
+        domain_data = filtered_df["domain"].value_counts().reset_index()
+        domain_data.columns = ["Domain", "Jobs"]
+
+        fig_domain = px.pie(
+            domain_data,
+            names="Domain",
+            values="Jobs",
+            hole=0.4,
+            title="Job Distribution by Domain",
+            color_discrete_sequence=px.colors.qualitative.Set3
+        )
+
+        fig_domain.update_layout(
+            paper_bgcolor="#0E1117",
+            font_color="white"
+        )
+
+        st.plotly_chart(fig_domain, use_container_width=True)
+
+    with col2:
+
+        st.markdown("### 👨‍💼 Experience Level Distribution")
+
+        exp_data = filtered_df["experience_level"].value_counts().reset_index()
+        exp_data.columns = ["Experience Level", "Jobs"]
+
+        fig_exp = px.bar(
+            exp_data,
+            x="Experience Level",
+            y="Jobs",
+            color="Experience Level",
+            title="Jobs by Experience Level",
+            color_discrete_sequence=px.colors.qualitative.Bold
+        )
+
+        fig_exp.update_layout(
+            plot_bgcolor="#0E1117",
+            paper_bgcolor="#0E1117",
+            font_color="white"
+        )
+
+        st.plotly_chart(fig_exp, use_container_width=True)
+
+    st.markdown("### 🏢 Job Type Analysis")
+
+    job_type_data = filtered_df["job_type"].value_counts().reset_index()
+    job_type_data.columns = ["Job Type", "Jobs"]
+
+    fig_type = px.bar(
+        job_type_data,
+        x="Job Type",
+        y="Jobs",
+        color="Job Type",
+        title="Remote vs Hybrid vs Onsite Jobs",
+        color_discrete_sequence=px.colors.qualitative.Vivid
+    )
+
+    fig_type.update_layout(
+        plot_bgcolor="#0E1117",
+        paper_bgcolor="#0E1117",
+        font_color="white"
+    )
+
+    st.plotly_chart(fig_type, use_container_width=True)
+
+    st.markdown("### 📌 Executive Insights")
+
+    if len(filtered_df) > 0:
+
+        top_domain = filtered_df["domain"].value_counts().idxmax()
+        top_exp = filtered_df["experience_level"].value_counts().idxmax()
+        top_type = filtered_df["job_type"].value_counts().idxmax()
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            st.success(f"🔥 Top Domain: {top_domain}")
+
+        with c2:
+            st.info(f"📊 Most Common Experience: {top_exp}")
+
+        with c3:
+            st.warning(f"💼 Most Common Job Type: {top_type}")
+
+    else:
+        st.error("No data available")
 
 st.divider()
 
