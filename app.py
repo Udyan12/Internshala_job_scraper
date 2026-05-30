@@ -8,6 +8,32 @@ st.set_page_config(
     page_icon="💼",
     layout="wide"
 )
+
+st.markdown("""
+<style>
+
+[data-testid="stMetric"] {
+    background: linear-gradient(135deg, #1E1E2F, #2A2A40);
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid #3A3A5A;
+    box-shadow: 0px 4px 15px rgba(0, 255, 170, 0.15);
+}
+
+[data-testid="stMetricLabel"] {
+    color: #B8B8D1;
+    font-size: 16px;
+}
+
+[data-testid="stMetricValue"] {
+    color: #00FFAA;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 if st.button("🔄 Refresh Job Data"):
     with st.spinner("Scraping latest jobs from Internshala..."):
         subprocess.run(["python", "internshala_scraper.py"])
@@ -21,11 +47,31 @@ except FileNotFoundError:
     st.stop()
 
 st.markdown("""
-# 💼 Internshala Job Market Analyzer
-Analyze real job listings scraped from Internshala with filters, charts, insights, and skill recommendations.
-""")
+<div style="
+padding:20px;
+border-radius:15px;
+background: linear-gradient(90deg,#1f4037,#99f2c8);
+text-align:center;
+margin-bottom:20px;
+">
 
-st.sidebar.title("🔍 Filters")
+<h1 style="color:black;">
+🚀 AI Job Market Intelligence Platform
+</h1>
+
+<h4 style="color:black;">
+Real-Time Job Market Analysis Using Web Scraping & Data Science
+</h4>
+
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("""
+# 🎯 Smart Filters
+
+Use filters to explore
+job trends and insights.
+""")
 
 search = st.sidebar.text_input("Search job title/company/skill")
 
@@ -58,10 +104,10 @@ st.divider()
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Total Jobs", len(filtered_df))
-col2.metric("Companies", filtered_df["company"].nunique())
-col3.metric("Locations", filtered_df["location"].nunique())
-col4.metric("Skills Found", filtered_df["skills"].nunique())
+col1.metric("💼 Total Jobs", len(filtered_df))
+col2.metric("🏢 Companies", filtered_df["company"].nunique())
+col3.metric("📍 Locations", filtered_df["location"].nunique())
+col4.metric("🧠 Skills Found", filtered_df["skills"].nunique())
 
 st.divider()
 
@@ -88,6 +134,11 @@ with tab1:
             orientation="h",
             title="Top Job Locations"
         )
+        fig1.update_layout(
+    paper_bgcolor="#0E1117",
+    plot_bgcolor="#0E1117",
+    font_color="white"
+)
         st.plotly_chart(fig1, use_container_width=True)
 
     with c2:
@@ -102,6 +153,11 @@ with tab1:
             orientation="h",
             title="Top Hiring Companies"
         )
+        fig1.update_layout(
+    paper_bgcolor="#0E1117",
+    plot_bgcolor="#0E1117",
+    font_color="white"
+)
         st.plotly_chart(fig2, use_container_width=True)
 
     st.subheader("💼 Top Job Roles")
@@ -134,6 +190,11 @@ with tab2:
             orientation="h",
             title="Top Skills in Job Listings"
         )
+        fig1.update_layout(
+    paper_bgcolor="#0E1117",
+    plot_bgcolor="#0E1117",
+    font_color="white"
+)
         st.plotly_chart(fig4, use_container_width=True)
 
         st.info(f"Most demanded skill: {skill_data.iloc[0]['Skill'].title()}")
