@@ -23,22 +23,51 @@ df["experience"] = df["experience"].str.strip()
 skill_keywords = [
     "python", "sql", "excel", "power bi", "tableau",
     "machine learning", "deep learning", "data analysis",
-    "pandas", "numpy", "tensorflow", "pytorch",
-    "nlp", "statistics", "django", "flask",
-    "data science", "analytics", "ai", "java",
-    "javascript", "react", "cloud", "aws"
+    "data analytics", "business intelligence", "statistics",
+    "pandas", "numpy", "matplotlib", "seaborn",
+    "tensorflow", "pytorch", "keras", "scikit-learn",
+    "nlp", "computer vision", "artificial intelligence",
+    "ai", "generative ai", "gen ai", "large language model",
+    "llm", "chatgpt", "prompt engineering",
+    "django", "flask", "api", "aws", "cloud",
+    "java", "javascript", "react", "mongodb", "mysql",
+    "data science", "analytics", "business analyst",
+    "data analyst", "data engineer"
 ]
 
 
 def extract_skills(text):
     text = str(text).lower()
-    found = []
+    found = set()
 
-    for skill in skill_keywords:
-        if skill in text:
-            found.append(skill)
+    skill_map = {
+        "python": ["python"],
+        "sql": ["sql", "mysql", "database"],
+        "excel": ["excel"],
+        "power bi": ["power bi", "business intelligence"],
+        "tableau": ["tableau"],
+        "data analysis": ["data analyst", "data analytics", "analyst"],
+        "data science": ["data scientist", "data science"],
+        "machine learning": ["machine learning", "ml"],
+        "artificial intelligence": ["ai", "artificial intelligence"],
+        "generative ai": ["generative ai", "gen ai", "genai"],
+        "business analytics": ["business analyst", "business analytics"],
+        "digital marketing": ["digital marketing", "marketing"],
+        "automation": ["automation"],
+        "robotics": ["robotics"],
+        "research": ["research"]
+    }
 
-    return ", ".join(found) if found else "Not Mentioned"
+    for skill, keywords in skill_map.items():
+        for keyword in keywords:
+            if keyword in text:
+                found.add(skill)
+
+    if len(found) == 0:
+        return "Not Mentioned"
+
+    return ", ".join(sorted(found))
+
 
 
 def detect_job_type(text):
@@ -87,10 +116,11 @@ def detect_domain(text):
     else:
         return "Other"
 
-
 df["combined_text"] = (
     df["title"].astype(str) + " " +
+    df["company"].astype(str) + " " +
     df["location"].astype(str) + " " +
+    df["salary"].astype(str) + " " +
     df["experience"].astype(str)
 )
 
@@ -99,7 +129,15 @@ df["job_type"] = df["combined_text"].apply(detect_job_type)
 df["experience_level"] = df["combined_text"].apply(detect_experience_level)
 df["domain"] = df["combined_text"].apply(detect_domain)
 
+print("\nSkill Counts:")
+print(df["skills"].value_counts().head(20))
+
+print("\nSample Skill Output:")
+print(df[["title", "skills"]].head(15))
+
 df.drop(columns=["combined_text"], inplace=True)
+
+
 
 df.to_csv("cleaned_internshala_jobs.csv", index=False)
 
