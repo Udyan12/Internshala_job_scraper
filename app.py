@@ -196,11 +196,39 @@ with tab2:
     font_color="white"
 )
         st.plotly_chart(fig4, use_container_width=True)
-
+        
         st.info(f"Most demanded skill: {skill_data.iloc[0]['Skill'].title()}")
+
+        selected_skill = st.selectbox(
+            "🎯 Filter Jobs By Skill",
+            skill_data["Skill"].tolist()
+        )
+
+        filtered_skill_jobs = filtered_df[
+            filtered_df["skills"].str.contains(
+                selected_skill,
+                case=False,
+                na=False
+            )
+        ]
+
+        filtered_skill_jobs = filtered_skill_jobs[
+            filtered_skill_jobs["title"] != "Not Available"
+        ]
+
+        st.subheader("🏆 Top Skills Analysis")
+
+        st.dataframe(
+            filtered_skill_jobs[
+                ["title", "company", "location"]
+            ].reset_index(drop=True),
+            use_container_width=True
+        )
+
     else:
         st.warning("No skills found in current filtered data.")
 
+       
 with tab3:
     st.subheader("🔎 Job Explorer")
 
