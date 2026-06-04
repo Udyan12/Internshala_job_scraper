@@ -194,13 +194,13 @@ try:
     df = pd.read_csv("cleaned_internshala_jobs.csv")
 except FileNotFoundError:
     st.error("cleaned_internshala_jobs.csv not found. Please run scraper first.")
-    st.stop()
+    
 
 required_columns = ["title", "company", "location", "salary", "experience", "skills", "job_type", "experience_level", "domain"]
 missing_columns = [col for col in required_columns if col not in df.columns]
 if missing_columns:
     st.error(f"Missing columns in dataset: {missing_columns}")
-    st.stop()
+    
 
 st.markdown("""
 <div class="hero-card">
@@ -326,20 +326,120 @@ with tab3:
 with tab4:
     st.subheader("🎯 Skill Recommendation System")
     user_skills = st.text_input("Enter your current skills", placeholder="Example: python, sql, excel")
+    user_skills_list = []
+    readiness_score = 0
+    
+    user_skills_list = []
 
     if user_skills:
+    
         user_skills_list = [skill.strip().lower() for skill in user_skills.split(",")]
-        all_required_skills = filtered_df["skills"].dropna().str.split(", ").explode()
-        all_required_skills = all_required_skills[all_required_skills != "Not Mentioned"].str.lower()
-        top_required_skills = all_required_skills.value_counts().head(10).index.tolist()
-        missing_skills = [skill for skill in top_required_skills if skill not in user_skills_list]
 
-        if missing_skills:
-            st.warning("You should learn these skills:")
-            for skill in missing_skills:
-                st.write(f"✅ {skill.title()}")
+        # Match jobs
+        skill_aliases = {
+        "python": ["python", "data", "analytics", "data analyst", "data science", "machine learning", "ai"],
+        "sql": ["sql", "data", "analytics", "data analyst", "business analyst", "database"],
+        "excel": ["excel", "data", "analytics", "business analyst"],
+        "power bi": ["power bi", "bi", "business intelligence", "analytics"],
+        "machine learning": ["machine learning", "ml", "ai", "artificial intelligence"],
+        "ai": ["ai", "artificial intelligence", "generative ai", "machine learning"],
+        }
+
+        expanded_skills = []
+
+        for skill in user_skills_list:
+            expanded_skills.append(skill)
+            expanded_skills.extend(skill_aliases.get(skill, []))
+
+        search_columns = [
+        "title",
+        "company",
+        "location",
+        "skills",
+        "domain",
+        "job_type",
+         "experience_level"
+        ]
+
+        filtered_jobs = filtered_df[
+            filtered_df[search_columns]
+            .astype(str)
+            .apply(lambda row: " ".join(row).lower(), axis=1)
+            .apply(lambda text: any(skill in text for skill in expanded_skills))
+        ]
+        total_jobs = len(filtered_jobs)
+
+        st.metric("🎯 Matching Jobs Found", total_jobs)
+
+        if total_jobs > 0:
+
+                st.success("Recommended Jobs Based On Your Skills")
+
+                st.dataframe(
+                    filtered_jobs.head(10),
+                    use_container_width=True
+                )
+
+        # Missing Skills
+        all_skills = filtered_jobs["skills"].dropna().str.split(", ").explode()
+        
+        if len(filtered_jobs) == 0:
+                st.warning("No matching jobs found for these skills.")
+                
+
+        top_skills = all_skills.value_counts().head(10).index.tolist()
+
+        missing_skills = [
+            skill for skill in top_skills
+            if skill.lower() not in user_skills_list
+        ]
+
+        st.subheader("📚 Skills You Should Learn")
+
+        for skill in missing_skills[:5]:
+            st.write(f"✅ {skill.title()}")
+    
+        matched_skills = [
+            skill for skill in top_skills
+            if skill.lower() in user_skills_list
+            ]
+
+        if len(top_skills) > 0:
+            readiness_score = int((len(matched_skills) / len(top_skills)) * 100)
         else:
-            st.success("Great! Your skills match current job demand.")
+            readiness_score = 0
+
+        st.subheader("📊 Career Readiness Score")
+        st.progress(readiness_score / 100)
+        st.metric("Readiness Score", f"{readiness_score}%")
+
+        if readiness_score >= 80:
+            recommended_role = "Data Analyst / AI Analyst"
+            st.success(f"Recommended Role: {recommended_role}")
+        elif readiness_score >= 50:
+            recommended_role = "Junior Data Analyst"
+            st.info(f"Recommended Role: {recommended_role}")
+        else:
+            recommended_role = "Beginner Data Science Learner"
+            st.warning(f"Recommended Role: {recommended_role}")      
+            
+            
+            
+    st.subheader("📄 Resume Strength Analyzer")
+
+    resume_score = readiness_score
+
+    st.metric("Resume Fit Score", f"{resume_score}%")
+
+    if resume_score >= 80:
+            st.success("Your resume is strongly aligned with current job demand.")
+    elif resume_score >= 50:
+            st.info("Your resume is moderately aligned. Add missing skills to improve.")
+    else:
+            st.warning("Your resume needs improvement. Focus on the recommended missing skills.")
+
+        
+  
 
 with tab5:
     st.subheader("📈 Domain Analytics")
