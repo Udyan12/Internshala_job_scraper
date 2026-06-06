@@ -184,11 +184,13 @@ def style_chart(fig):
     return fig
 
 
-if st.button("🔄 Refresh Job Data"):
-    with st.spinner("Scraping latest jobs from Internshala..."):
-        subprocess.run(["python", "internshala_scraper.py"])
-        subprocess.run(["python", "internshala_analysis.py"])
-    st.success("Latest job data updated successfully!")
+with st.sidebar:
+    if st.button("🔄 Refresh Job Data", use_container_width=True):
+        with st.spinner("Scraping latest jobs from Internshala..."):
+            subprocess.run(["python", "internshala_scraper.py"])
+            subprocess.run(["python", "internshala_analysis.py"])
+        st.success("Latest job data updated successfully!")
+        st.rerun()
 
 try:
     df = pd.read_csv("cleaned_internshala_jobs.csv")
@@ -365,7 +367,7 @@ with tab4:
             filtered_df[search_columns]
             .astype(str)
             .apply(lambda row: " ".join(row).lower(), axis=1)
-            .apply(lambda text: any(skill in text for skill in expanded_skills))
+            .apply(lambda text: any(f" {skill} " in f" {text} " for skill in expanded_skills))
         ]
         total_jobs = len(filtered_jobs)
 

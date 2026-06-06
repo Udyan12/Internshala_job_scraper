@@ -1,99 +1,64 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+import requests
+from bs4 import BeautifulSoup
 import pandas as pd
-import time
 
-options = Options()
-options.add_argument("--disable-notifications")
-options.add_argument("--start-maximized")
+URL = "https://internshala.com/jobs/data-science-jobs/"
 
-driver = webdriver.Chrome(
-    service=Service(ChromeDriverManager().install()),
-    options=options
-)
+headers = {
+    "User-Agent": "Mozilla/5.0",
+    "Accept-Language": "en-US,en;q=0.9"
+}
 
-url = "https://internshala.com/jobs/data-science-jobs/"
-driver.get(url)
+response = requests.get(URL, headers=headers, timeout=20)
 
-time.sleep(5)
+print("Status Code:", response.status_code)
 
-# Close signup / popup if it appears
-popup_xpaths = [
-    "//button[contains(text(),'Skip')]",
-    "//button[contains(text(),'No thanks')]",
-    "//button[contains(text(),'Maybe later')]",
-    "//button[contains(text(),'Later')]",
-    "//span[contains(text(),'×')]",
-    "//span[contains(text(),'✕')]",
-    "//button[contains(@class,'close')]",
-    "//div[contains(@class,'close')]",
-    "//i[contains(@class,'close')]"
-]
+if response.status_code != 200:
+    print("Failed to fetch page. Old CSV preserved.")
+    exit()
 
-for xpath in popup_xpaths:
-    try:
-        popup = driver.find_element(By.XPATH, xpath)
-        popup.click()
-        time.sleep(2)
-        break
-    except:
-        pass
+soup = BeautifulSoup(response.text, "html.parser")
 
-# Scroll page to load jobs
-for i in range(3):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(2)
+jobs = soup.select(".individual_internship")
 
-jobs = driver.find_elements(By.CLASS_NAME, "individual_internship")
+print("Jobs found:", len(jobs))
 
 job_data = []
 
 for job in jobs:
-    try:
-        title = job.find_element(By.CLASS_NAME, "job-title-href").text.strip()
-    except:
-        title = "Not Available"
-
-    try:
-        company = job.find_element(By.CLASS_NAME, "company-name").text.strip()
-    except:
-        company = "Not Available"
-
-    try:
-        location = job.find_element(By.CLASS_NAME, "locations").text.strip()
-    except:
-        location = "Not Available"
-
-    try:
-        salary = job.find_element(By.CLASS_NAME, "stipend").text.strip()
-    except:
-        salary = "Not Available"
-
-    try:
-        experience = job.find_element(By.CLASS_NAME, "desktop-text").text.strip()
-    except:
-        experience = "Not Available"
+    title = job.select_one(".job-title-href")
+    company = job.select_one(".company-name")
+    location = job.select_one(".locations")
+    salary = job.select_one(".stipend")
+    experience = job.select_one(".desktop-text")
 
     job_data.append({
-        "title": title,
-        "company": company,
-        "location": location,
-        "salary": salary,
-        "experience": experience,
+        "title": title.get_text(strip=True) if title else "Not Available",
+        "company": company.get_text(strip=True) if company else "Not Available",
+        "location": location.get_text(strip=True) if location else "Not Available",
+        "salary": salary.get_text(strip=True) if salary else "Not Available",
+        "experience": experience.get_text(strip=True) if experience else "Not Available",
         "source": "Internshala"
     })
 
 df = pd.DataFrame(job_data)
 
+df = df[
+    ~(
+        (df["title"] == "Not Available") &
+        (df["company"] == "Not Available") &
+        (df["location"] == "Not Available")
+    )
+]
+
+if len(df) < 5:
+    print("Too few valid jobs scraped. Old CSV preserved.")
+    exit()
+
 df.drop_duplicates(inplace=True)
 
 df.to_csv("internshala_jobs.csv", index=False)
 
-print(df)
+print(df.head())
 print("Total jobs scraped:", len(df))
 print("Internshala scraping completed")
-
-driver.quit()
